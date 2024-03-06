@@ -1,5 +1,6 @@
 # SudokuSolver
-A simple soduku solver, to practice with python
+A simple soduku solver.
+Made to practice with python.
 
 ## board format
 
