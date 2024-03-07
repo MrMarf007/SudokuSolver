@@ -15,6 +15,14 @@ import sys
 # |     \##      \##  \####### \##       \##          |
 # |                                                   |
 # +===================================================+ 
+#
+# +---------------------- TODO: ----------------------
+# |
+# | - fix: makes multiple guesses in one step
+# | - add more boards
+# |
+# +---------------------------------------------------
+
 
 #region - handle command line arguments
 
@@ -99,13 +107,61 @@ def parseBoard_LtoS(boardList):
             boardString += str(boardList[i][j])
     return boardString
 
+def printCollapseBoard(collapseBoard):
+    rows = []
+    for i in range(9):
+        row = [
+            "| ",
+            "| ",
+            "| "
+        ]
+        for j in range(9):
+            vals = collapseBoard[i][j]
+            if vals == [] and board[i][j] != 0:
+                row[0] += " VAL  "
+                row[1] += "  " + str(board[i][j]) + "   "
+                row[2] += "      "
+            else: 
+                for k in range(9):
+                    if k + 1 in vals:
+                        row[k // 3] += str(k + 1) + " "
+                    else:
+                        row[k // 3] += "  "
+            row[0] += "| "
+            row[1] += "| "
+            row[2] += "| "
+        rows.append(row)
+    print("                             collapseBoard:                              ")
+    for r in rows:
+        print("+-------+-------+-------+-------+-------+-------+-------+-------+-------+")
+        print(r[0] + "\n" + r[1] + "\n" + r[2])
+    print("+-------+-------+-------+-------+-------+-------+-------+-------+-------+")
+
+def printBoard(board):
+    print("          board           ")
+    for i in range(9):
+        row = ""
+        for j in range(9):
+            if j % 3 == 0:
+                row += "| "
+            if board[i][j] == 0:
+                val = " "
+            else:
+                val = str(board[i][j])
+            row += val + " "
+        if i % 3 == 0:
+            print("+-------+-------+-------+")
+        print(row + "|"	)
+    print("+-------+-------+-------+")
+    print(parseBoard_LtoS(board))
+
 def insertVal(data, x, y, val):
     if parameters["data"]: 
         print ("inserting " + str(val) + " at " + str(x) + " " + str(y) + " ~ " + data)
 
     board[x][y] = val
-
     collapseBoard[x][y] = []
+
     for i in range(9):
         if val in collapseBoard[x][i]:
             collapseBoard[x][i].remove(val)
@@ -116,32 +172,13 @@ def insertVal(data, x, y, val):
             if val in collapseBoard[(x // 3) * 3 + i][(y // 3) * 3 + j]:
                 collapseBoard[(x // 3) * 3 + i][(y // 3) * 3 + j].remove(val)
 
-# does not work perfectly yet! 
 def removeVal(x, y):
     if parameters["data"]:
         print ("removing " + str(board[x][y]) + " at " + str(x) + " " + str(y))
-    val = board[x][y]
-    collapse = [1,2,3,4,5,6,7,8,9]
+
     board[x][y] = 0
-    for i in range(9):
-        if val not in collapseBoard[x][i] and board[x][i] == 0:
-            collapseBoard[x][i].append(val)
-        else:
-            if board[x][i] in collapse:
-                collapse.remove(board[x][i])
-        if val not in collapseBoard[i][y] and board[i][y] == 0:
-            collapseBoard[i][y].append(val)
-        else:
-            if board[i][y] in collapse:
-                    collapse.remove(board[i][y])
-    for i in range(3):
-        for j in range(3):
-            if val not in collapseBoard[(x // 3) * 3 + i][(y // 3) * 3 + j] and board[(x // 3) * 3 + i][(y // 3) * 3 + j] == 0:
-                collapseBoard[(x // 3) * 3 + i][(y // 3) * 3 + j].append(val)
-            else:
-                if board[(x // 3) * 3 + i][(y // 3) * 3 + j] in collapse:
-                    collapse.remove(board[(x // 3) * 3 + i][(y // 3) * 3 + j])
-    collapseBoard[x][y] = collapse
+    global collapseBoard # dont like this
+    collapseBoard = createCollapseBoard(board)
 
 def createCollapseBoard(board):
     newCollapseBoard = []
@@ -237,7 +274,7 @@ def validateBoard(board):
     wrongCells = list(set(wrongCells))
     return wrongCells
 
-def draw_board(board, collapseBoard, faults):
+def draw_board(board, collapseBoard, selected, faults):
     # draw the cells
     for i in range(9):
         for j in range(9):
@@ -248,7 +285,9 @@ def draw_board(board, collapseBoard, faults):
             # display amount of possible numbers
             s = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
             num = len(collapseBoard[i][j])
-            if (i, j) in faults:
+            if (i, j) == selected:
+                s.fill((128,128,255,80))
+            elif (i, j) in faults:
                 s.fill((255,0,0,80))
             else:
                 s.fill((0, num * 28, 0, 80))
@@ -410,6 +449,12 @@ while running:
             running = False
         
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_c:
+                printCollapseBoard(collapseBoard)
+
+            if event.key == pygame.K_p:
+                printBoard(board)
+
             # quit button
             if event.key == pygame.K_ESCAPE:
                 running = False
@@ -429,24 +474,30 @@ while running:
             if event.key == pygame.K_0 and selectedCell != (-1, -1):
                 finished = False
                 (x, y) = selectedCell
-                if board[y][x] != 0:
-                    removeVal(y, x)
+                if board[x][y] != 0:
+                    removeVal(x, y)
                 selectedCell = (-1, -1)
             
             # insert number into cell
-            if (event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9] 
+            if ( event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9] 
                 and selectedCell != (-1, -1) ):
-                finished = False
-
+                
                 (x, y) = selectedCell
-                insertVal("user", y, x, int(event.unicode))
+                currentVal = board[x][y]
+                newVal = int(event.unicode)
+
+                if currentVal != newVal:
+                    if currentVal != 0:
+                        removeVal(x, y)
+                    insertVal("user", x, y, newVal)
                 selectedCell = (-1, -1)
+                finished = False
 
         # select cell
         if event.type == pygame.MOUSEBUTTONUP:
             pos = pygame.mouse.get_pos()
-            x = (pos[0] - 100) // CELL_SIZE
-            y = (pos[1] - 100) // CELL_SIZE
+            y = (pos[0] - 100) // CELL_SIZE
+            x = (pos[1] - 100) // CELL_SIZE
             selectedCell = (x, y)
 
     # Validate if the board is correct
@@ -454,7 +505,7 @@ while running:
 
     # Draw the Sudoku board
     window.fill(BG_COLOR)
-    draw_board(board, collapseBoard, faults)
+    draw_board(board, collapseBoard, selectedCell,  faults)
 
     # Update the display
     pygame.display.update()
