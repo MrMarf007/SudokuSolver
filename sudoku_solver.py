@@ -319,6 +319,7 @@ def updateBoard(board, collapseBoard, faults):
     if len(faults) > 0:
         if parameters["data"]:
             print("invalid board")
+
         try:
             (oldBoard, oldCollapseBoard, oldX, oldY, oldVal) = savedBoards.pop()
         except:
@@ -327,7 +328,6 @@ def updateBoard(board, collapseBoard, faults):
             doStep = False
             return board, collapseBoard
         else:
-            
             board = oldBoard
             collapseBoard = oldCollapseBoard
             collapseBoard[oldX][oldY].remove(oldVal)
@@ -344,17 +344,21 @@ def updateBoard(board, collapseBoard, faults):
     if not changed:
         lowest = 10
         lowpos = (-1,-1)
+        br = False
         for i in range(9):
+            if br: break
             for j in range(9):
+                if br: break
                 cell = collapseBoard[i][j]
                 if len(cell) < lowest and cell != []:
                     if len(cell) == 2:
-                        update_guess(board, collapseBoard, i, j)
+                        br = update_guess(board, collapseBoard, i, j)
                         break
                     lowest = len(cell)
                     lowpos = (i, j)
         if lowpos != (-1,-1):
-            update_guess(board, collapseBoard, lowpos[0], lowpos[1])
+            if not br: 
+                update_guess(board, collapseBoard, lowpos[0], lowpos[1])
 
     return board, collapseBoard
 #region - updateBoard helper functions
@@ -435,6 +439,7 @@ def update_guess(board, collapseBoard, x, y):
     oCollapseBoard = copy.deepcopy(collapseBoard)
     savedBoards.append((oBoard,oCollapseBoard,x,y,cell[0]))
     insertVal("guess", x, y, cell[0])
+    return parameters["mode"] == "step"
 
 #endregion
 
@@ -455,14 +460,38 @@ while running:
             if event.key == pygame.K_p:
                 printBoard(board)
 
-            # quit button
             if event.key == pygame.K_ESCAPE:
-                running = False
+                selectedCell = (-1, -1)
 
             # start solve button
             if event.key == pygame.K_SPACE:
+                selectedCell = (-1, -1)
                 finished = False
                 doStep = True
+
+            if event.key == pygame.K_RIGHT:
+                (x, y) = selectedCell
+                if x != -1 and y != -1:
+                    y = (y + 1) % 9
+                    selectedCell = (x, y)
+            
+            if event.key == pygame.K_LEFT:
+                (x, y) = selectedCell
+                if x != -1 and y != -1:
+                    y = (y - 1) % 9
+                    selectedCell = (x, y)
+
+            if event.key == pygame.K_DOWN:
+                (x, y) = selectedCell
+                if x != -1 and y != -1:
+                    x = (x + 1) % 9
+                    selectedCell = (x, y)
+
+            if event.key == pygame.K_UP:
+                (x, y) = selectedCell
+                if x != -1 and y != -1:
+                    x = (x - 1) % 9
+                    selectedCell = (x, y)
 
             # reset button
             if event.key == pygame.K_r:
@@ -476,7 +505,6 @@ while running:
                 (x, y) = selectedCell
                 if board[x][y] != 0:
                     removeVal(x, y)
-                selectedCell = (-1, -1)
             
             # insert number into cell
             if ( event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9] 
@@ -490,7 +518,6 @@ while running:
                     if currentVal != 0:
                         removeVal(x, y)
                     insertVal("user", x, y, newVal)
-                selectedCell = (-1, -1)
                 finished = False
 
         # select cell
