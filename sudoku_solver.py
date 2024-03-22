@@ -18,7 +18,6 @@ import sys
 #
 # +---------------------- TODO: ----------------------
 # |
-# | - fix: makes multiple guesses in one step
 # | - add more boards
 # |
 # +---------------------------------------------------
