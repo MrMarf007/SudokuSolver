@@ -23,24 +23,53 @@ import sys
 # +---------------------------------------------------
 
 
+BOARDS = {
+    "master1" : "000910000900600300083050070000000005000000000200001407102070600004000290000060000",
+    "master2" : "906004000030010095000000800000080300400001082020000700000000007050090021300500000",
+    "random1" : "530070000600195000098000060800060003400803001700020006060000280000419005000080079",
+    "empty"   : "000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+}
+
+LINE_COLOR = (255, 255, 255)
+BG_COLOR = (50, 50, 50)
+
 #region - handle command line arguments
 
 parameters = {
     "board" : "000000000000000000000000000000000000000000000000000000000000000000000000000000000",
     "size" : 500,
-    "mode" : "fast", # "step" or "fast" or "fastStep"
+    "mode" : "fast", # "step", "fast", "fastStep" or "console"
     "data" : False
 }
 
+modes = ["step", "fast", "fastStep", "console"]
+
 for i in range(1, len(sys.argv)):
-    if sys.argv[i] == "-b":
-        parameters["board"] = sys.argv[i + 1]
-    if sys.argv[i] == "-s":
-        parameters["size"]  = int(sys.argv[i + 1])
-    if sys.argv[i] == "-m":
-        parameters["mode"]  = sys.argv[i + 1]
-    if sys.argv[i] == "-d":
-        parameters["data"]  = True
+    match (sys.argv[i]):
+        
+        case "-b":
+            val = sys.argv[i + 1]
+            if (len(val) == 81 and val.isdigit()) or val in BOARDS:
+                parameters["board"] = val
+            else:
+                print("Input error: Invalid board string, using empty board")
+
+        case "-s":
+            try:
+                val = int(sys.argv[i + 1])
+                parameters["size"] = val
+            except:
+                print("Input error: Invalid size, using default size (500)")
+
+        case "-m":
+            val = sys.argv[i + 1]
+            if val in modes:
+                parameters["mode"]  = val
+            else:
+                print("Input error: Invalid mode, using fast mode")
+
+        case "-d":
+            parameters["data"]  = True
 
 #endregion
 
@@ -54,15 +83,6 @@ window = pygame.display.set_mode((parameters["size"] + 200, parameters["size"] +
 pygame.display.set_caption("Sudoku Board")
 
 CELL_SIZE = parameters["size"] // 9
-BOARDS = {
-    "master1" : "000910000900600300083050070000000005000000000200001407102070600004000290000060000",
-    "master2" : "906004000030010095000000800000080300400001082020000700000000007050090021300500000",
-    "random1" : "530070000600195000098000060800060003400803001700020006060000280000419005000080079",
-    "empty"   : "000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-}
-
-LINE_COLOR = (255, 255, 255)
-BG_COLOR = (50, 50, 50)
 
 board = []
 collapseBoard = []
@@ -445,6 +465,7 @@ def update_guess(board, collapseBoard, x, y):
 #region - main game loop
 board, collapseBoard = getBoard()
 running = True
+
 while running:
 
     # Handle events
