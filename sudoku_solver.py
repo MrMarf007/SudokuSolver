@@ -19,6 +19,7 @@ import sys
 # +---------------------- TODO: ----------------------
 # |
 # | - add more boards
+# | - implement console mode, where nothing is drawn, just the result is printed into the console
 # |
 # +---------------------------------------------------
 
@@ -38,7 +39,7 @@ BG_COLOR = (50, 50, 50)
 parameters = {
     "board" : "000000000000000000000000000000000000000000000000000000000000000000000000000000000",
     "size" : 500,
-    "mode" : "fast", # "step", "fast", "fastStep" or "console"
+    "mode" : "fast",
     "data" : False
 }
 
@@ -46,7 +47,7 @@ modes = ["step", "fast", "fastStep", "console"]
 
 for i in range(1, len(sys.argv)):
     match (sys.argv[i]):
-        
+
         case "-b":
             val = sys.argv[i + 1]
             if (len(val) == 81 and val.isdigit()) or val in BOARDS:
